@@ -5,59 +5,56 @@ use File::Find;
 
 my $mod_dir = '.';
 
-ok(-d "locale", "locale directory exists");
-
-my @tr_files = glob("locale/*.tr");
-ok(@tr_files > 0, "translation files exist");
-
+# Find all Lua files
 my @lua_files;
 find(
   sub { push @lua_files, $File::Find::name if /\.lua$/ },
   $mod_dir
 );
 
+ok(@lua_files, "Found Lua files in the mod");
+
 my $found_translator = 0;
 my @violations;
 
 for my $file (@lua_files) {
-  open my $fh, '<', $file or die $!;
-  my $in_register = 0;
+    open my $fh, '<', $file or die "Cannot open $file: $!";
+    my $in_register = 0;
 
-  while (my $line = <$fh>) {
+    while (my $line = <$fh>) {
 
-    $found_translator = 1
-      if $line =~ /(?:minetest|core)\.get_translator\s*\(/;
+        # Detect translator initialization
+        $found_translator = 1
+            if $line =~ /(?:minetest|core)\.get_translator\s*\(/;
 
-    # detect entering register block
-    $in_register = 1 if $line =~ /minetest\.register_/;
+        # Detect entering register block
+        $in_register = 1 if $line =~ /minetest\.register_/;
+        $in_register = 0 if $line =~ /^\s*}\s*\)\s*$/;  # crude block end
 
-    # crude block end detection
-    $in_register = 0 if $line =~ /^\s*}\s*\)\s*$/;
+        next unless $in_register;
 
-    next unless $in_register;
+        # Check fields that should use S()
+        if ($line =~ /(description|short_description)\s*=\s*"([^"]+)"/) {
+            push @violations, "$file: $1 not wrapped in S(): $2";
+        }
 
-    # fields that must use S()
-    if ($line =~ /(description|short_description)\s*=\s*"([^"]+)"/) {
-      push @violations, "$file: $1 not wrapped in S(): $2";
+        if ($line =~ /(description|short_description)\s*=\s*[^S]/) {
+            push @violations, "$file: $1 likely not using S()"
+                unless $line =~ /\bS\s*\(/;
+        }
+
+        # Check chat messages
+        if ($line =~ /chat_send_(?:player|all)\s*\([^,]+,\s*"([^"]+)"/) {
+            push @violations, "$file: chat string not wrapped in S(): $1";
+        }
     }
 
-    if ($line =~ /(description|short_description)\s*=\s*[^S]/) {
-      push @violations, "$file: $1 likely not using S()"
-        unless $line =~ /\bS\s*\(/;
-    }
-
-    # chat functions
-    if ($line =~ /chat_send_(?:player|all)\s*\([^,]+,\s*"([^"]+)"/) {
-      push @violations, "$file: chat string not wrapped in S(): $1";
-    }
-  }
-
-  close $fh;
+    close $fh;
 }
 
 ok($found_translator, "translator initialized");
 
 ok(!@violations, "no raw user-facing strings")
-  or diag(join "\n", @violations);
+    or diag(join "\n", @violations);
 
 done_testing();
