@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+# author:  Bas Huis
+# website: https://github.com/bas080
+# created: Fri Mar 13 02:36:04 CET 2020
+# changed: Mon Mar  2 22:19:26 CET 2020
+# license: GNU General Public License 3.0
+
+# Only set runtime parameters when running in Bash. (Dash compatibility)
+[ ! -z "${BASH_VERSION:-}" ] && {
+  set -o pipefail
+}
+
+on_exit() {
+  [ ! -z "${NOT_OK:-}" ] && exit 1
+}
+
+trap on_exit EXIT
+
+script_success() {
+  [ -z "${BASH_TAP_SCRIPT_MODE:-}" ] || return 0
+  plan 1
+  BASH_TAP_SCRIPT_MODE=1 eval "$0" "$@" | diagnostics
+  test_success "Script $0 ran successfuly."
+  exit $?
+}
+
+plan() {
+  if [ -z "${1:-}" ]; then
+    plan "$TEST_COUNT"
+  else
+    printf '1..%s\n' "$1"
+  fi
+}
+
+diagnostics() {
+  xargs -d '\n' printf '# %s\n'
+}
+
+skip() {
+  ok "# skip $1"
+}
+
+skip_all() {
+  printf '1..0 # skip %s\n' "$1"
+}
+
+todo() {
+  printf 'not ok - # TODO %b\n' "$@"
+}
+
+bail() {
+  NOT_OK=1
+  printf 'Bail out! %s\n' "$1"
+}
+
+test_success() {
+  # shellcheck disable=SC2181
+  if [ $? -eq 0 ]; then
+    ok "$@"
+  else
+    not_ok "$@"
+  fi
+}
+
+test_failure() {
+  test $? -ne 0
+  test_success "$@"
+}
+
+ok() {
+  TEST_COUNT=$((TEST_COUNT+1))
+
+  # shellcheck disable=SC2059
+  printf 'ok - %s\n' "$(printf "$@")"
+}
+
+not_ok() {
+  NOT_OK=1
+  printf 'not %s\n' "$(ok "$@")"
+}
+
+# aliases
+
+success() { test_success "$@"; }
+failure() { test_failure "$@"; }

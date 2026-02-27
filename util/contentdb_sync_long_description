@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+curl "$CONTENTDB_ORIGIN/api/packages/<author>/<name>/" \
+    -X PUT \
+    -H "Authorization: Bearer $CONTENTDB_API_KEY" \

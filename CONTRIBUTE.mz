@@ -1,0 +1,23 @@
+# Contribute
+
+
+## Install
+
+We use bash-tap to write tests
+
+```bash bash
+mkdir -p t bin
+curl -sL 'https://raw.githubusercontent.com/bas080/bash-tap/refs/heads/master/bash-tap' > ./bin/bash-tap
+```
+
+## Generate the README
+
+```bash bash
+export DIR="${DIR:-$(mktemp -d)}"
+export PATH="$PWD/bin:$PATH"
+
+mkdir -p "$DIR"
+
+markatzea ./README.mz | tee README.md
+npx markdown-toc -i README.md
+```

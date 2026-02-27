@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+
+JUST RUN PROVE IN EACH REPO. CONSIDER PLACING THAT AT THE BOTTOM OF THIS FILE.
+parent_dir="$1"
+
+# read the script from stdin into a variable
+script="$(cat)"
+
+# iterate over subdirectories
