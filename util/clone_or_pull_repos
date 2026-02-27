@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# Clone or pull a list of git repositories into the project-level "repository"
+# directory.  The list is read from a file (default: <project>/repositories.txt)
+# or from a file passed as the first argument.
+#
+# Usage:
+#   util/clone_or_pull_repos [path/to/repos.txt]
+#
+# If the repository directory does not exist it will be created.  Existing
+# clones are pulled to fetch the latest commits.  Empty lines in the list are
+# ignored and clone failures are non-fatal (the script continues with the next
+# URL).
+
+set -euo pipefail
+
+# determine project root as one level up from this script
+root="$(realpath "$(dirname "$0")/..")"
+repo_dir="$root/repository"
+mkdir -p "$repo_dir"
+cd "$repo_dir" || exit 1
+
+# list file may be supplied on the command line, otherwise default
+if [ $# -gt 0 ]; then
+    repo_file="$1"
+else
+    repo_file="$root/repositories.txt"
+fi
+
+if [ ! -f "$repo_file" ]; then
+    echo "repository list not found: $repo_file" >&2
+    exit 1
+fi
+
+while IFS= read -r repo; do
+    # skip blank lines and comments
+    case "$repo" in
+        ''|#*) continue ;;
+    esac
+    git clone "$repo" || true
+done < "$repo_file"
+
+# pull changes in existing clones
+find . -maxdepth 1 -type d -not -name . -print0 | while IFS= read -r -d '' d; do
+    (cd "$d" && git pull)
+done

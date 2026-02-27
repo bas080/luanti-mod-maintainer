@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# Clone or update all repositories listed in the projects repositories.txt file
+# and then run the TAP tests located in the top–level `t/` directory for each
+# clone.  The goal is to provide a one‑stop helper for fetching the latest
+# changes and verifying they still pass the shared test suite.
+#
+# Usage:
+#   util/clone_pull_and_test [path/to/repos.txt] [repo]
+#
+# The first argument is the repository list (defaults to
+# `<project>/repositories.txt`).  The optional second argument may be either a
+# URL or the name of a repository.  If provided, only that repository will have
+# tests executed; otherwise the script iterates over all checked‑out clones.
+#
+# Arguments are the same as for `util/clone_or_pull_repos` with the addition of
+# the optional target repository.
+
+set -euo pipefail
+
+# establish project root relative to this script
+root="$(realpath "$(dirname "$0")/..")"
+repo_file=""
+target=""
+if [ $# -gt 0 ]; then
+    repo_file="$1"
+    if [ $# -gt 1 ]; then
+        target="$2"
+    fi
+fi
+
+# perform clone/pull pass; allow the helper to print diagnostics
+"$root/util/clone_or_pull_repos" "$repo_file"
+
+# repository directory is always under the project root
+repo_dir="$root/repository"
+
+# run tests in each checked‑out repository
+CURRENT_DIRECTORY="$root"
+if [ -n "$target" ]; then
+    # map a URL to a directory name if necessary
+    if [[ "$target" == *"/"* ]]; then
+        target="$(basename "$target")"
+        target="${target%.git}"
+    fi
+    dir="$repo_dir/$target"
+    if [ -d "$dir" ]; then
+        printf "\nTESTS FOR: %s\n" "$dir"
+        (cd "$dir" && prove "$CURRENT_DIRECTORY/t" | npx tap-spec)
+    else
+        echo "specified repo '$target' not found under $repo_dir" >&2
+        exit 1
+    fi
+else
+    for dir in "$repo_dir"/*/; do
+        dir="${dir%/}"          # strip trailing slash
+        printf "\nTESTS FOR: %s\n" "$dir"
+        (cd "$dir" && prove "$CURRENT_DIRECTORY/t" | npx tap-spec)
+    done
+fi

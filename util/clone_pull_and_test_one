@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Clone (or update) a single repository and run the shared TAP tests located in
+# the top‑level `t/` directory.  This is useful when you only need to work with
+# one repo rather than the whole collection.
+#
+# Usage:
+#   util/clone_pull_and_test_one <git-url>
+#
+# The repository will be checked out under <project>/repository/<name>, where
+# <name> is derived from the URL (the last path component with any trailing
+# ".git" removed).
+
+set -euo pipefail
+
+if [ $# -ne 1 ]; then
+    cat <<'EOF' >&2
+usage: clone_pull_and_test_one <git-url>
+
+Example:
+  util/clone_pull_and_test_one git@github.com:bas080/mtpaint.git
+EOF
+    exit 2
+fi
+
+url="$1"
+
+# project root (one level up from this script)
+root="$(realpath "$(dirname "$0")/..")"
+repo_dir="$root/repository"
+mkdir -p "$repo_dir"
+
+# derive a directory name from the URL
+name="$(basename "$url")"
+name="${name%.git}"
+
+if [ -d "$repo_dir/$name" ]; then
+    echo "updating existing clone: $name"
+    (cd "$repo_dir/$name" && git pull)
+else
+    echo "cloning $url into $repo_dir/$name"
+    (cd "$repo_dir" && git clone "$url" "$name")
+fi
+
+# run tests
+printf "\nTESTS FOR: %s\n" "$repo_dir/$name"
+(cd "$repo_dir/$name" && prove "$root/t" | npx tap-spec)

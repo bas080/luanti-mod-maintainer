@@ -1,0 +1,6 @@
+git@github.com:bas080/mtpaint.git
+git@github.com:bas080/pathogen.git
+git@github.com:bas080/small_fall.git
+git@github.com:bas080/trudged.git
+git@github.com:bas080/massive_tree.git
+git@github.com:bas080/vines.git
