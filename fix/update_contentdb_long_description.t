@@ -34,10 +34,6 @@ local $/;
 my $local_readme = <$rfh>;
 close $rfh;
 
-# Normalize line endings
-$local_readme =~ s/\r\n?/\n/g;
-$local_readme =~ s/\s+$//mg;
-
 # Fetch remote long_description
 my $ua = LWP::UserAgent->new;
 my $get_url = "$origin/api/packages/$author/$name/";
