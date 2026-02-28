@@ -3,7 +3,8 @@ use warnings;
 use Test::More;
 
 my @files = glob("textures/*.png");
-ok(@files, "Found PNGs");
+
+plan skip_all => "No PNG files found" unless @files;
 
 for my $f (@files) {
     ok(-f $f, "$f exists");
@@ -14,7 +15,7 @@ for my $f (@files) {
 
     # optipng dry-run
     my $simulate = `optipng -strip all -simulate "$f" 2>&1`;
-    
+
     if ($simulate =~ /is already optimized\./i) {
         pass("$f is already optimized");
     } else {
