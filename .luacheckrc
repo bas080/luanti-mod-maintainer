@@ -3,6 +3,7 @@ std = "lua51"
 globals = {
    "minetest",
    "PseudoRandom",
+   "PcgRandom",
    "core",
    "vector",
    "ItemStack",
