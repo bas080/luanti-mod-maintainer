@@ -2,15 +2,21 @@ use strict;
 use warnings;
 use Test::More;
 
-my $remote = 'origin'; # change if your remote has a different name
+my $remote = 'origin';
 
 # Get the latest local tag
-my $tag = `git describe --tags --abbrev=0`;
+my $tag = `git describe --tags --abbrev=0 2>/dev/null`;
 chomp $tag;
-BAIL_OUT("No local git tag found") unless $tag;
+
+if (!$tag) {
+    fail("No local git tag found");
+    done_testing();
+    exit;
+}
 
 # Check if the tag exists on remote
-my $remote_tags = `git ls-remote --tags $remote`;
+my $remote_tags = `git ls-remote --tags $remote 2>/dev/null`;
+
 if ($remote_tags =~ /\Q$tag\E/) {
     pass("Tag '$tag' already exists on remote '$remote'");
 } else {
