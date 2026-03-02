@@ -20,7 +20,6 @@ pass("LICENSE.txt updated with LGPL-2.1");
 my $cdb_file = ".cdb.json";
 my $data = {};
 
-# Read existing JSON if present
 if (-f $cdb_file) {
     open my $cfh, '<', $cdb_file or die "Cannot open $cdb_file: $!";
     local $/;
@@ -29,18 +28,37 @@ if (-f $cdb_file) {
     $data = eval { decode_json($json_text) } || {};
 }
 
-# Update license fields without deleting other keys
 $data->{license} = 'LGPL-2.1';
+
 if (-d "textures") {
+
     $data->{media_license} = 'CC0';
+
+    # ----- 3. Ensure CC0.txt exists in textures -----
+    my $cc0_file = "textures/CC0.txt";
+    my $cc0_url  = "https://raw.githubusercontent.com/licenses/license-templates/refs/heads/master/templates/cc0.txt";
+
+    unless (-f $cc0_file) {
+        my $cc0_text = get($cc0_url);
+        ok($cc0_text, "Fetched CC0 license text") or BAIL_OUT("Failed to fetch CC0 text");
+
+        open my $ccfh, '>', $cc0_file or die "Cannot write to $cc0_file: $!";
+        print $ccfh $cc0_text;
+        close $ccfh;
+
+        pass("Created textures/CC0.txt");
+    } else {
+        pass("textures/CC0.txt already exists");
+    }
+
 } else {
     delete $data->{media_license} if exists $data->{media_license};
 }
 
-# Write back safely (overwrite is required for valid JSON)
 open my $cfh, '>', $cdb_file or die "Cannot write to $cdb_file: $!";
 print $cfh JSON->new->canonical(1)->pretty(1)->encode($data);
 close $cfh;
+
 pass(".cdb.json license fields updated appropriately");
 
 done_testing();
