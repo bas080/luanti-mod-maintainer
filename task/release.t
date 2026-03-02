@@ -22,8 +22,16 @@ BAIL_OUT("Missing author/name") unless $author && $name;
 my @tags = split /\n/, `git tag --sort=-creatordate`;
 BAIL_OUT("No git tags found") unless @tags;
 
-my $version = $tags[0];          # latest tag
-my $prev_tag = $tags[1] // '';   # previous tag
+my $version  = $tags[0] // '';
+my $prev_tag = $tags[1] // '';
+
+for ($version, $prev_tag) {
+    next unless defined $_;
+    s/^\s+//;
+    s/\s+$//;
+}
+
+BAIL_OUT("Latest tag empty after trimming") unless $version;
 
 # ----- Push master branch -----
 system('git push origin master') == 0
