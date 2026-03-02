@@ -6,6 +6,12 @@ Clone the test suite repository if you haven’t already:
 git clone https://github.com/luanti/luanti-mod-maintainer.git
 ````
 
+Some scripts have dependencies.
+
+```bash
+cpanm --installdeps .
+```
+
 Then, from the root directory of the mod you want to test, run:
 
 ```bash
