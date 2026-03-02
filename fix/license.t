@@ -35,7 +35,7 @@ if (-d "textures") {
     $data->{media_license} = 'CC0';
 
     # ----- 3. Ensure CC0.txt exists in textures -----
-    my $cc0_file = "textures/CC0.txt";
+    my $cc0_file = "textures/LICENSE.txt";
     my $cc0_url  = "https://raw.githubusercontent.com/licenses/license-templates/refs/heads/master/templates/cc0.txt";
 
     unless (-f $cc0_file) {
