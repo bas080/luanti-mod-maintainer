@@ -6,8 +6,7 @@ use LWP::UserAgent;
 
 # ----- Config -----
 my $origin  = $ENV{CONTENTDB_ORIGIN} // 'https://content.luanti.org';
-my $api_key = $ENV{CONTENTDB_API_KEY}
-    or BAIL_OUT("CONTENTDB_API_KEY not set");
+my $api_key = $ENV{CONTENTDB_API_KEY} or BAIL_OUT("CONTENTDB_API_KEY not set");
 
 # ----- Read .cdb.json -----
 open my $fh, '<', '.cdb.json' or BAIL_OUT("Missing .cdb.json");
@@ -19,20 +18,38 @@ my $author = $ENV{'CONTENTDB_AUTHOR'};
 my $name   = $cdb->{name} // '';
 BAIL_OUT("Missing author/name") unless $author && $name;
 
-# ----- Get last tag (release version) -----
-my $version = `git describe --tags --abbrev=0`;
-chomp $version;
-BAIL_OUT("No git tag found") unless $version;
+# ----- Get last two tags -----
+my @tags = split /\n/, `git tag --sort=-creatordate`;
+BAIL_OUT("No git tags found") unless @tags;
+
+my $version = $tags[0];          # latest tag
+my $prev_tag = $tags[1] // '';   # previous tag
+
+# ----- Push master branch -----
+system('git push origin master') == 0
+    or BAIL_OUT("Failed to push master branch to remote");
+
+# ----- Push tags -----
+system('git push --tags') == 0
+    or BAIL_OUT("Failed to push git tags to remote");
 
 # ----- Get changelog diff -----
-my $diff = `git diff HEAD~1 -- CHANGELOG.md | grep '^+[^+]'`;
+my $diff;
+if ($prev_tag) {
+    $diff = `git diff $prev_tag..$version -- CHANGELOG.md | grep '^+[^+]'`;
+} else {
+    open my $ch, '<', 'CHANGELOG.md' or BAIL_OUT("CHANGELOG.md missing");
+    local $/;
+    $diff = <$ch>;
+    close $ch;
+}
+
 $diff =~ s/^\+//mg;
 $diff =~ s/\r\n?/\n/g;
 $diff =~ s/\s+\z//;
 
 BAIL_OUT("No changelog additions detected") unless $diff;
-
-my $release_notes = "$diff";
+my $release_notes = $diff;
 
 # ----- Create release -----
 my $ua = LWP::UserAgent->new;

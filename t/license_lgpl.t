@@ -18,6 +18,6 @@ ok($data, ".cdb.json is valid JSON") or BAIL_OUT("Invalid JSON: $@");
 ok(exists $data->{license}, ".cdb.json has 'license' field")
     or BAIL_OUT("Missing license field in .cdb.json");
 
-is($data->{license}, 'LGPL-2.1', "ContentDB license field is LGPL-2.1");
+is($data->{license}, 'LGPL-2.1-only', "ContentDB license field is LGPL-2.1");
 
 done_testing();

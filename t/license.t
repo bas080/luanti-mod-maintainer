@@ -39,7 +39,8 @@ ok($data, ".cdb.json is valid JSON") or BAIL_OUT("Invalid JSON: $@");
 ok(exists $data->{license}, ".cdb.json has 'license' field")
     or BAIL_OUT("Missing license field in .cdb.json");
 
-is($data->{license}, 'LGPL-2.1', "ContentDB license field is LGPL-2.1");
+is($data->{license}, 'LGPL-2.1-only', "ContentDB license field is LGPL-2.1");
+
 
 # ----- 2b. Media license rules -----
 
@@ -60,21 +61,13 @@ for my $dir (qw(textures sounds)) {
 ok(exists $data->{media_license}, ".cdb.json has 'media_license' field")
     or BAIL_OUT("Missing media_license field in .cdb.json");
 
-my $media_license = $data->{media_license};
-
 if ($has_media) {
 
-    my @accepted = qw(CC0 CC-BY CC-BY-SA PublicDomain);
-
-    ok(
-        grep { $_ eq $media_license } @accepted,
-        "media_license is approved for media assets"
-    );
+    is($data->{media_license}, 'CC0-1.0', "ContentDB media_license field is CC0-1.0");
 
 } else {
-
     is(
-        $media_license,
+        $data->{media_license},
         $data->{license},
         "media_license matches code license when no media assets exist"
     );

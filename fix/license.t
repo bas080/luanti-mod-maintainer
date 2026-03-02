@@ -3,6 +3,7 @@ use warnings;
 use Test::More;
 use JSON;
 use LWP::Simple;
+use File::Path qw(make_path);
 
 # ----- 1. Update LICENSE.txt -----
 my $license_file = "LICENSE.txt";
@@ -25,36 +26,36 @@ if (-f $cdb_file) {
     local $/;
     my $json_text = <$cfh>;
     close $cfh;
-    $data = eval { decode_json($json_text) } || {};
+    eval { $data = decode_json($json_text) } or $data = {};
 }
 
-$data->{license} = 'LGPL-2.1';
+# Set code license
+$data->{license} = 'LGPL-2.1-only';
 
+# ----- 3. Handle media license -----
 if (-d "textures") {
+    $data->{media_license} = 'CC0-1.0';
 
-    $data->{media_license} = 'CC0';
-
-    # ----- 3. Ensure CC0.txt exists in textures -----
-    my $cc0_file = "textures/LICENSE.txt";
-    my $cc0_url  = "https://raw.githubusercontent.com/licenses/license-templates/refs/heads/master/templates/cc0.txt";
-
-    unless (-f $cc0_file) {
-        my $cc0_text = get($cc0_url);
+    # Ensure textures/LICENSE.txt exists
+    my $texture_license = "textures/LICENSE.txt";
+    unless (-f $texture_license) {
+        make_path("textures") unless -d "textures";
+        my $cc0_text = get("https://raw.githubusercontent.com/licenses/license-templates/refs/heads/master/templates/cc0.txt");
         ok($cc0_text, "Fetched CC0 license text") or BAIL_OUT("Failed to fetch CC0 text");
-
-        open my $ccfh, '>', $cc0_file or die "Cannot write to $cc0_file: $!";
-        print $ccfh $cc0_text;
-        close $ccfh;
-
-        pass("Created textures/CC0.txt");
+        open my $tlfh, '>', $texture_license or die "Cannot write $texture_license: $!";
+        print $tlfh $cc0_text;
+        close $tlfh;
+        pass("Created textures/LICENSE.txt");
     } else {
-        pass("textures/CC0.txt already exists");
+        pass("textures/LICENSE.txt already exists");
     }
 
 } else {
-    delete $data->{media_license} if exists $data->{media_license};
+    # No textures → media license matches code license
+    $data->{media_license} = $data->{license};
 }
 
+# Write back .cdb.json
 open my $cfh, '>', $cdb_file or die "Cannot write to $cdb_file: $!";
 print $cfh JSON->new->canonical(1)->pretty(1)->encode($data);
 close $cfh;
