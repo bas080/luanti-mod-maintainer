@@ -84,12 +84,30 @@ if ($has_media) {
 my $texture_dir = "textures";
 if (-d $texture_dir) {
     my @pngs;
+
+    
     find(sub { push @pngs, $File::Find::name if /\.png$/i }, $texture_dir);
     ok(@pngs, "Found PNG textures in $texture_dir");
 
     for my $png (@pngs) {
         ok(-f $png, "$png exists");
     }
+
+    if (@pngs) {
+        my @license_files;
+        find(
+            sub {
+                push @license_files, $File::Find::name
+                    if /^(LICENSE|COPYING|CC0)(\.txt)?$/i;
+            },
+            $texture_dir
+        );
+
+        ok(
+            @license_files,
+            "License file exists in textures directory when images are present"
+        );
+    }    
 } else {
     note("No textures directory found; skipping texture files check");
 }

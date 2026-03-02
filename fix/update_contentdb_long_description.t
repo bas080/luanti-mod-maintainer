@@ -21,7 +21,7 @@ my $json_text = <$fh>;
 close $fh;
 
 my $cdb_data = decode_json($json_text);
-my $author = $cdb_data->{author} // $cdb_data->{maintainers}->[0] // '';
+my $author = $ENV{'CONTENTDB_AUTHOR'};
 my $name   = $cdb_data->{name} // '';
 ok($author && $name, "Found author and name in .cdb.json") or BAIL_OUT("Missing author/name");
 
