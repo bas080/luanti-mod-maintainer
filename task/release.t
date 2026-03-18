@@ -63,6 +63,8 @@ my $release_notes = $diff;
 my $ua = LWP::UserAgent->new;
 my $url = "$origin/api/packages/$author/$name/releases/new/";
 
+# -- Consider doing a delete here before doing a POST.
+
 my $payload = encode_json({
     version       => $version,
     title         => $version,

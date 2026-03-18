@@ -10,6 +10,7 @@ globals = {
    "table",
    "string",
    "math",
+   "luanti_utils",
 }
 
 read_globals = {
